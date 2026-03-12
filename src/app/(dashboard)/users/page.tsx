@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { getUsers, getUserById, getUserPreferences } from "@/lib/api";
+import { getUsers, getUserById, getUserPreferences, updateUserStatus } from "@/lib/api";
 import { Search, SlidersHorizontal, User, Shield, Briefcase, MapPin, Calendar, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -74,11 +74,25 @@ export default function UsersPage() {
     }
   };
 
+  const handleStatusUpdate = async (id: string, newStatus: string) => {
+    const success = await updateUserStatus(id, newStatus);
+    if (success) {
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
+      if (selectedUser && selectedUser.id === id) {
+        setSelectedUser({ ...selectedUser, status: newStatus });
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
         const response: any = await getUsers({ search: searchTerm });
+        if (!response) {
+          setUsers([]);
+          return;
+        }
         // Ensure we extract an array from the response safely
         const data = Array.isArray(response) ? response : (response.users || response.data || response.items || []);
         
@@ -225,7 +239,33 @@ export default function UsersPage() {
                   <p className="text-muted-foreground">{selectedUser.username}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="bg-primary/5 border-primary/20">{selectedUser.type}</Badge>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">{selectedUser.status}</Badge>
+                    <Badge variant="outline" className={selectedUser.status === "Active" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-destructive/10 text-destructive border-destructive/20"}>{selectedUser.status}</Badge>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-[10px] border-green-500/20 text-green-500 hover:bg-green-500/10"
+                      onClick={() => handleStatusUpdate(selectedUser.id, "Active")}
+                    >
+                      Set Active
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-[10px] border-yellow-500/20 text-yellow-500 hover:bg-yellow-500/10"
+                      onClick={() => handleStatusUpdate(selectedUser.id, "Suspended")}
+                    >
+                      Suspend
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-[10px] border-destructive/20 text-destructive hover:bg-destructive/10"
+                      onClick={() => handleStatusUpdate(selectedUser.id, "Inactive")}
+                    >
+                      Deactivate
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -21,6 +21,10 @@ export default function SegmentsPage() {
       setLoading(true);
       try {
         const response: any = await getUserSegments();
+        if (!response) {
+          setSegmentsData([]);
+          return;
+        }
         const data = Array.isArray(response) ? response : (response.segments || response.data || response.items || []);
         if (data && data.length > 0) {
           const formatted = data.map((s: any) => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getSystemHealth } from "@/lib/api";
+import { getSystemHealth, getSystemResources } from "@/lib/api";
 import { CheckCircle, XCircle, Clock, Server, Database, HardDrive, BrainCircuit } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,19 +15,29 @@ const SYSTEM_SERVICES = [
 
 export default function SystemHealthPage() {
   const [services, setServices] = useState<any[]>(SYSTEM_SERVICES);
+  const [resources, setResources] = useState<any>({ cpu: 45, memory: { used: 2, total: 4, percent: 50 }, redis: 80 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        const response = await getSystemHealth();
-        const data = Array.isArray(response) ? response : (response.services || response.data || []);
+        const [healthRes, resourcesRes]: any = await Promise.all([
+          getSystemHealth(),
+          getSystemResources()
+        ]);
+        
+        if (!healthRes) return;
+        const data = Array.isArray(healthRes) ? healthRes : (healthRes.services || healthRes.data || []);
         if (data.length > 0) {
           const formatted = data.map((s: any) => ({
             ...s,
             icon: s.id === 'api' ? Server : s.id === 'mongo' ? Database : s.id === 'redis' ? HardDrive : BrainCircuit
           }));
           setServices(formatted);
+        }
+
+        if (resourcesRes) {
+          setResources(resourcesRes.data || resourcesRes);
         }
       } catch (e) {
         console.error("Failed to load system health, using fallback.");
@@ -113,23 +123,23 @@ export default function SystemHealthPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">API Server CPU</span>
-                <span className="text-muted-foreground">45%</span>
+                <span className="text-muted-foreground">{resources.cpu}%</span>
               </div>
-              <Progress value={45} className="h-2 bg-muted" />
+              <Progress value={resources.cpu} className="h-2 bg-muted" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">API Server Memory</span>
-                <span className="text-muted-foreground">2GB / 4GB (50%)</span>
+                <span className="text-muted-foreground">{resources.memory.used}GB / {resources.memory.total}GB ({resources.memory.percent}%)</span>
               </div>
-              <Progress value={50} className="h-2 bg-muted" />
+              <Progress value={resources.memory.percent} className="h-2 bg-muted" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">Redis Cluster Memory</span>
-                <span className="text-muted-foreground">800MB / 1GB (80%)</span>
+                <span className="text-muted-foreground">{resources.redis}%</span>
               </div>
-              <Progress value={80} className="h-2 bg-muted [&>div]:bg-yellow-500" />
+              <Progress value={resources.redis} className={`h-2 bg-muted ${resources.redis > 75 ? '[&>div]:bg-yellow-500' : ''}`} />
             </div>
           </CardContent>
         </Card>

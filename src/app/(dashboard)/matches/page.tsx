@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { getMatches, getMatchAnalytics } from "@/lib/api";
+import { getMatches, getMatchAnalytics, getMatchTrends } from "@/lib/api";
 
 
 export default function MatchesPage() {
@@ -29,29 +29,20 @@ export default function MatchesPage() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response: any = await getMatchAnalytics();
-        const data = response.analytics || response.data || response;
+        const [statsRes, trendsRes]: any = await Promise.all([
+          getMatchAnalytics(),
+          getMatchTrends()
+        ]);
         
-        // Generate 7 days of mock data for charts since backend only returns scalar sums
-        const mockTrends = Array.from({ length: 7 }).map((_, i) => {
-          const d = new Date(); d.setDate(d.getDate() - (6 - i));
-          return {
-            date: format(d, "MMM d"),
-            success: Math.floor(Math.random() * 40) + 10,
-            skipped: Math.floor(Math.random() * 20) + 5
-          };
-        });
+        if (!statsRes) return;
         
-        const mockScores = Array.from({ length: 7 }).map((_, i) => {
-          const d = new Date(); d.setDate(d.getDate() - (6 - i));
-          return {
-            date: format(d, "MMM d"),
-            score: Math.floor(Math.random() * 20) + 75
-          };
-        });
-
-        setTrends(data.trends || mockTrends);
-        setScores(data.scores || mockScores);
+        const data = statsRes.analytics || statsRes.data || statsRes;
+        const trendsData = trendsRes.data || trendsRes.trends || trendsRes || [];
+        
+        // Use real trends if available, otherwise stay empty or keep minimal defaults
+        setTrends(trendsData.history || trendsData.daily || []);
+        setScores(trendsData.scores || []);
+        
         setMetrics({
           generated: data.total_matches?.toString() || "0",
           connected: data.accepted?.toString() || "0",
@@ -70,6 +61,10 @@ export default function MatchesPage() {
       setLoading(true);
       try {
         const response: any = await getMatches({ limit: 20 });
+        if (!response) {
+          setMatches([]);
+          return;
+        }
         const data = Array.isArray(response) ? response : (response.matches || response.data || response.items || []);
         
         if (data.length > 0) {

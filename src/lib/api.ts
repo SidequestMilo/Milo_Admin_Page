@@ -60,6 +60,10 @@ export const getUserPreferences = async (telegramId: string) => {
     return await api.get(`/api/preferences/${telegramId}`);
 };
 
+export const updateUserStatus = async (telegramId: string, status: string) => {
+    return await api.patch(`/api/users/${telegramId}/status`, { status });
+};
+
 // =======================
 // Matchmaking & Connections
 // =======================
@@ -70,6 +74,10 @@ export const getMatches = async (params: { page?: number; limit?: number; status
 
 export const getMatchAnalytics = async () => {
     return await api.get('/api/matches/analytics');
+};
+
+export const getMatchTrends = async () => {
+    return await api.get('/api/matches/trends');
 };
 
 export const getConnections = async () => {
@@ -88,6 +96,14 @@ export const getFeedback = async () => {
     return await api.get('/api/feedback');
 };
 
+export const getFeedbackAnalytics = async () => {
+    return await api.get('/api/feedback/analytics');
+};
+
+export const updateFeedbackStatus = async (id: string, status: string) => {
+    return await api.patch(`/api/feedback/${id}/status`, { status });
+};
+
 export const getActivity = async (params: { user?: string; command?: string; date_range?: string } = {}) => {
     return await api.get('/api/activity', { params });
 };
@@ -96,6 +112,14 @@ export const getSystemHealth = async () => {
     return await api.get('/api/system-health');
 };
 
+export const getSystemResources = async () => {
+    return await api.get('/api/system-health/resources');
+};
+
 export const sendBroadcast = async (data: { audience: string; type: string; message: string }) => {
     return await api.post('/admin/broadcast', data);
+};
+
+export const getBroadcastHistory = async () => {
+    return await api.get('/admin/broadcast/history');
 };

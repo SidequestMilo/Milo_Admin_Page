@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Send, AlertCircle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Send, AlertCircle, RefreshCw, History } from "lucide-react";
+import { sendBroadcast, getBroadcastHistory } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,16 +25,35 @@ export default function BroadcastPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
 
-  const handleSend = () => {
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const data: any = await getBroadcastHistory();
+        setHistory(data?.history || data?.items || data || []);
+      } catch (e) {
+        console.error("Failed to fetch broadcast history");
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  const handleSend = async () => {
     if (!message) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await sendBroadcast({ audience, type, message });
+      if (res) {
+        setSent(true);
+        setTimeout(() => setSent(false), 3000);
+        setMessage("");
+      }
+    } catch (e) {
+      console.error("Broadcast failed");
+    } finally {
       setLoading(false);
-      setSent(true);
-      setTimeout(() => setSent(false), 3000);
-      setMessage("");
-    }, 1500);
+    }
   };
 
   return (
@@ -132,26 +153,24 @@ export default function BroadcastPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 rounded bg-muted/30 border border-border/50">
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm text-foreground">Welcome to the new matching engine!</span>
-                <span className="text-xs text-muted-foreground">Audience: All Users • Type: Feature Update</span>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-muted-foreground">Today, 10:45 AM</span>
-                <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Success (12,340)</Badge>
-              </div>
-            </div>
-            <div className="flex justify-between items-center p-3 rounded bg-muted/30 border border-border/50">
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm text-foreground">Important: Scheduled Maintenance</span>
-                <span className="text-xs text-muted-foreground">Audience: All Users • Type: Announcement</span>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-muted-foreground">Oct 28, 08:00 PM</span>
-                <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Success (11,850)</Badge>
-              </div>
-            </div>
+            {history.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4 text-xs italic">No broadcast history found.</p>
+            ) : (
+              history.map((item, idx) => (
+                <div key={item.id || idx} className="flex justify-between items-center p-3 rounded bg-muted/30 border border-border/50">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium text-sm text-foreground truncate max-w-[200px] md:max-w-md">{item.message}</span>
+                    <span className="text-xs text-muted-foreground">Audience: {item.audience} • Type: {item.type}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs text-muted-foreground">{item.timestamp ? format(new Date(item.timestamp), "MMM d, h:mm a") : "-"}</span>
+                    <Badge variant="outline" className={`text-[10px] ${item.status === 'success' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-destructive/10 text-destructive border-destructive/20'}`}>
+                      {item.status === 'success' ? `Success (${item.delivered_count || 0})` : 'Failed'}
+                    </Badge>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

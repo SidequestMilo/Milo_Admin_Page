@@ -30,6 +30,10 @@ export default function BotActivityPage() {
           user: searchTerm, 
           command: filterCommand 
         });
+        if (!response) {
+          setLogs([]);
+          return;
+        }
         const data = Array.isArray(response) ? response : (response.logs || response.activity || response.data || response.items || []);
         
         if (data && data.length > 0) {

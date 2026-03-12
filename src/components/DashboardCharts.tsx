@@ -35,17 +35,17 @@ export function DashboardCharts() {
           getUserSegments()
         ]);
         
-        if (connRes.status === 'fulfilled') {
+        if (connRes.status === 'fulfilled' && connRes.value) {
           const d = Array.isArray(connRes.value) ? connRes.value : (connRes.value.connections || connRes.value.data || connRes.value.items || []);
-          if (d.length > 0) setMatchActivityData(d);
+          if (Array.isArray(d) && d.length > 0) setMatchActivityData(d);
         }
 
-        if (analyticsRes.status === 'fulfilled') {
+        if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
           const d = analyticsRes.value.growth || analyticsRes.value.data?.growth || analyticsRes.value.userGrowth || analyticsRes.value.data;
           if (Array.isArray(d) && d.length > 0) setGrowthData(d);
         }
 
-        if (segmentsRes.status === 'fulfilled') {
+        if (segmentsRes.status === 'fulfilled' && segmentsRes.value) {
           const d = segmentsRes.value.segments || segmentsRes.value.data || segmentsRes.value.items || segmentsRes.value;
           if (Array.isArray(d) && d.length > 0) setSegmentsData(d);
         }

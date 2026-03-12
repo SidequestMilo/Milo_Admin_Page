@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { getFeedback } from "@/lib/api";
+import { getFeedback, getFeedbackAnalytics, updateFeedbackStatus } from "@/lib/api";
 import { Star, MoreHorizontal, Download, Flag, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,17 +30,27 @@ const TRENDS_DATA: any[] = [];
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState({ avgRating: "0.0", trends: [] });
 
   useEffect(() => {
     const fetchFeedbackData = async () => {
       setLoading(true);
       try {
-        const response: any = await getFeedback();
-        const data = Array.isArray(response) ? response : (response.feedback || response.data || response.items || []);
+        const [feedbackRes, statsRes]: any = await Promise.all([
+          getFeedback(),
+          getFeedbackAnalytics()
+        ]);
+        
+        if (!feedbackRes) {
+          setFeedbacks([]);
+          return;
+        }
+        const data = Array.isArray(feedbackRes) ? feedbackRes : (feedbackRes.feedback || feedbackRes.data || feedbackRes.items || []);
+        const stats = statsRes?.data || statsRes || {};
         
         if (data && data.length > 0) {
           const formatted = data.map((f: any, i: number) => ({
-            id: f.id || `f_${i}`,
+            id: f.id || f._id || `f_${i}`,
             user: f.user_name || f.user || "Anonymous",
             type: f.user_type || f.type || "User",
             rating: f.rating || 0,
@@ -52,6 +62,11 @@ export default function FeedbackPage() {
         } else {
           setFeedbacks([]);
         }
+
+        setAnalytics({
+          avgRating: stats.average_rating?.toFixed(1) || "4.4",
+          trends: stats.trends || []
+        });
       } catch (error) {
         console.error("Failed to fetch feedback:", error);
         setFeedbacks([]);
@@ -62,8 +77,11 @@ export default function FeedbackPage() {
     fetchFeedbackData();
   }, []);
 
-  const toggleStatus = (id: string, newStatus: string) => {
-    setFeedbacks(feedbacks.map(f => f.id === id ? { ...f, status: newStatus } : f));
+  const toggleStatus = async (id: string, newStatus: string) => {
+    const success = await updateFeedbackStatus(id, newStatus);
+    if (success) {
+      setFeedbacks(feedbacks.map(f => f.id === id ? { ...f, status: newStatus } : f));
+    }
   };
 
   return (
@@ -85,7 +103,7 @@ export default function FeedbackPage() {
             <Star className="h-4 w-4 text-primary" fill="currentColor" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">4.4 / 5.0</div>
+            <div className="text-2xl font-bold text-foreground">{analytics.avgRating} / 5.0</div>
             <p className="text-xs text-muted-foreground mt-1">+0.2 from last month</p>
           </CardContent>
         </Card>
@@ -96,7 +114,7 @@ export default function FeedbackPage() {
           </CardHeader>
           <CardContent className="h-[120px] pb-2">
             <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
-              <BarChart data={TRENDS_DATA} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <BarChart data={analytics.trends} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <Tooltip 
                   contentStyle={{ backgroundColor: "#1A1A1D", borderColor: "#2C2C2F", color: "#E4E4E7", fontSize: '12px' }}
                   cursor={{ fill: "#2C2C2F", opacity: 0.4 }}

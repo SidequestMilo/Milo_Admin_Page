@@ -28,6 +28,7 @@ export default function DashboardPage() {
     const fetchKPIs = async () => {
       try {
         const response = await getAnalytics();
+        if (!response) return;
         const data = response.metrics || response.data?.metrics || response;
         if (data && typeof data === 'object') {
           if (data.total_users !== undefined) setMetrics(prev => ({ ...prev, totalUsers: data.total_users.toString() }));
