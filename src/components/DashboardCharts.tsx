@@ -36,17 +36,33 @@ export function DashboardCharts() {
         ]);
         
         if (connRes.status === 'fulfilled' && connRes.value) {
-          const d = Array.isArray(connRes.value) ? connRes.value : (connRes.value.connections || connRes.value.data || connRes.value.items || []);
+          const val = connRes.value as any;
+          const d = Array.isArray(val) ? val : (val.connections || val.data || val.items || []);
+          if (Array.isArray(d) && d.length > 0) setMatchActivityData(d);
+        } else if (analyticsRes.status === 'fulfilled' && (analyticsRes.value as any)?.activity) {
+          // Fallback: Use aggregated activity data from analytics if connections list isn't available/formatted
+          const d = (analyticsRes.value as any).activity;
           if (Array.isArray(d) && d.length > 0) setMatchActivityData(d);
         }
 
         if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
-          const d = analyticsRes.value.growth || analyticsRes.value.data?.growth || analyticsRes.value.userGrowth || analyticsRes.value.data;
+          const val = analyticsRes.value as any;
+          const d = val.growth || val.data?.growth || val.userGrowth || val.data;
           if (Array.isArray(d) && d.length > 0) setGrowthData(d);
         }
 
         if (segmentsRes.status === 'fulfilled' && segmentsRes.value) {
-          const d = segmentsRes.value.segments || segmentsRes.value.data || segmentsRes.value.items || segmentsRes.value;
+          const val = segmentsRes.value as any;
+          let d = val.segments || val.data || val.items || val;
+          
+          if (!Array.isArray(d) && typeof d === 'object' && d !== null) {
+            // Convert legacy {Students: 5, Developers: 2} object to [{name: 'Students', value: 5}, ...]
+            d = Object.entries(d).map(([name, value]) => ({ 
+              name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+              value 
+            }));
+          }
+          
           if (Array.isArray(d) && d.length > 0) setSegmentsData(d);
         }
 
@@ -64,8 +80,9 @@ export function DashboardCharts() {
           <CardDescription>User acquisition over the last 7 days</CardDescription>
         </CardHeader>
         <CardContent className="pl-2">
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+          <div className="h-[300px] w-full min-h-[300px]">
+            {growthData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={growthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
@@ -83,6 +100,11 @@ export function DashboardCharts() {
                 <Area type="monotone" dataKey="users" stroke="#E4E4E7" strokeWidth={2} fillOpacity={1} fill="url(#colorUsers)" />
               </AreaChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                No growth data available
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -93,8 +115,9 @@ export function DashboardCharts() {
           <CardDescription>Category distribution across the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+          <div className="h-[300px] w-full min-h-[300px]">
+            {segmentsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={segmentsData}
@@ -117,6 +140,11 @@ export function DashboardCharts() {
                 <Legend iconType="circle" formatter={(value) => <span style={{ color: '#E4E4E7' }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                No demographic data available
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -127,8 +155,9 @@ export function DashboardCharts() {
           <CardDescription>Matches generated vs accepted connections</CardDescription>
         </CardHeader>
         <CardContent className="pl-2">
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
+          <div className="h-[300px] w-full min-h-[300px]">
+            {matchActivityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
               <BarChart data={matchActivityData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C2C2F" />
                 <XAxis dataKey="name" stroke="#A1A1AA" fontSize={12} tickLine={false} axisLine={false} />
@@ -142,6 +171,11 @@ export function DashboardCharts() {
                 <Bar dataKey="connection" fill="#E4E4E7" radius={[4, 4, 0, 0]} name="Successful Connections" />
               </BarChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                No matchmaking data available
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

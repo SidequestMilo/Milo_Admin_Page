@@ -38,9 +38,10 @@ export default function MatchesPage() {
         
         const data = statsRes.analytics || statsRes.data || statsRes;
         const trendsData = trendsRes.data || trendsRes.trends || trendsRes || [];
+        const actualHistory = Array.isArray(trendsData) ? trendsData : (trendsData.history || trendsData.daily || trendsData.trends || []);
         
-        // Use real trends if available, otherwise stay empty or keep minimal defaults
-        setTrends(trendsData.history || trendsData.daily || []);
+        // Use real trends if available
+        setTrends(actualHistory);
         setScores(trendsData.scores || []);
         
         setMetrics({
@@ -65,7 +66,13 @@ export default function MatchesPage() {
           setMatches([]);
           return;
         }
-        const data = Array.isArray(response) ? response : (response.matches || response.data || response.items || []);
+        // Extract array from either direct list or nested matches key
+        let data = Array.isArray(response) ? response : (response.matches || response.data?.matches || response.data || response.items || []);
+        
+        if (!Array.isArray(data) && typeof data === 'object' && data !== null) {
+          // Fallback: Convert object to array if needed (though less likely for matches)
+          data = Object.values(data);
+        }
         
         if (data.length > 0) {
           const flattenedMatches: any[] = [];

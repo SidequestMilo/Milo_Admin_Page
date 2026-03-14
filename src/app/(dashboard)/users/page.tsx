@@ -88,13 +88,13 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response: any = await getUsers({ search: searchTerm });
+        const response: any = await getUsers({ search: searchTerm, limit: 100 });
         if (!response) {
           setUsers([]);
           return;
         }
         // Ensure we extract an array from the response safely
-        const data = Array.isArray(response) ? response : (response.users || response.data || response.items || []);
+        const data = Array.isArray(response) ? response : (response.users || response.data?.users || response.data || response.items || []);
         
         // Map the backend data to match our UI expectations
         const formattedData = data.map((u: any) => ({

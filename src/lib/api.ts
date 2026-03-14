@@ -1,12 +1,14 @@
 import axios from "axios";
 
-// 1 & 2. Create the Axios instance with the direct backend URL, headers, and timeout
+// Use environment variable if available, otherwise default to remote for development
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://3.110.182.233:8000";
+
 const api = axios.create({
-    baseURL: "http://3.110.182.233:8000",
+    baseURL: baseURL,
     headers: {
         "Content-Type": "application/json"
     },
-    timeout: 10000
+    timeout: 15000
 });
 
 // 3. Add the request interceptor to attach the auth token automatically

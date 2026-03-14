@@ -25,7 +25,16 @@ export default function SegmentsPage() {
           setSegmentsData([]);
           return;
         }
-        const data = Array.isArray(response) ? response : (response.segments || response.data || response.items || []);
+        // Extract array from either direct list or nested segments key
+        let data = Array.isArray(response) ? response : (response.segments || response.data?.segments || response.data || response.items || []);
+        
+        if (!Array.isArray(data) && typeof data === 'object' && data !== null) {
+          // Fallback: Convert object to array if needed
+          data = Object.entries(data).map(([name, value]) => ({ 
+            name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            value 
+          }));
+        }
         if (data && data.length > 0) {
           const formatted = data.map((s: any) => ({
             name: s.name || s.category || "Unknown",
