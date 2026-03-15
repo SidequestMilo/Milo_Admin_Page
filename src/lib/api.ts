@@ -1,7 +1,10 @@
 import axios from "axios";
 
-// Use environment variable if available, otherwise default to remote for development
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Use relative paths in production to let Next.js rewrites handle proxying to the backend.
+// This avoids CORS issues and ensures the browser calls the Vercel domain instead of the backend IP directly.
+const baseURL = typeof window !== 'undefined' && process.env.NODE_ENV === 'production'
+    ? ""
+    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000");
 
 const api = axios.create({
     baseURL: baseURL,
