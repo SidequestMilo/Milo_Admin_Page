@@ -124,8 +124,8 @@ export default function SegmentsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {[...segmentsData].sort((a,b)=>b.value-a.value).map((stat) => (
-                      <div key={stat.name} className="flex items-center">
+                    {[...segmentsData].sort((a,b)=>b.value-a.value).map((stat, idx) => (
+                      <div key={`${stat.name}-${idx}`} className="flex items-center">
                         <div className="space-y-1 flex-1">
                           <p className="text-sm font-medium leading-none text-foreground">{stat.name}</p>
                           <p className="text-sm text-muted-foreground">{stat.value.toLocaleString()} active users</p>

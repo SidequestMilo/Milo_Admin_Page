@@ -27,14 +27,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchKPIs = async () => {
       try {
-        const response = await getAnalytics();
+        const response: any = await getAnalytics();
         if (!response) return;
-        const data = response.metrics || response.data?.metrics || response;
+        
+        // Handle both flattened and nested response structures
+        const data = response.metrics || response.data || response;
+        
         if (data && typeof data === 'object') {
-          if (data.total_users !== undefined) setMetrics(prev => ({ ...prev, totalUsers: data.total_users.toString() }));
-          if (data.active_users_24h !== undefined) setMetrics(prev => ({ ...prev, activeUsers: data.active_users_24h.toString() }));
-          if (data.total_matches !== undefined) setMetrics(prev => ({ ...prev, totalMatches: data.total_matches.toString() }));
-          if (data.new_users_today !== undefined) setMetrics(prev => ({ ...prev, newUsers: data.new_users_today.toString() }));
+          setMetrics(prev => ({
+            ...prev,
+            totalUsers: (data.total_users ?? 0).toString(),
+            activeUsers: (data.active_users_24h ?? 0).toString(),
+            totalMatches: (data.total_matches ?? 0).toString(),
+            newUsers: (data.new_users_today ?? 0).toString(),
+          }));
         }
       } catch (err) {
         console.error("Failed to load top level dashboard metrics", err);
@@ -46,60 +52,103 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/50 bg-card/50 backdrop-blur shadow-sm hover:bg-card/80 transition-colors">
+        <Card className="border-none bg-white/[0.02] backdrop-blur-xl hover-scale animate-premium cursor-default relative overflow-hidden group shadow-2xl">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Users className="h-24 w-24 -mr-8 -mt-8" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
               Total Users
             </CardTitle>
-            <Users className="h-4 w-4 text-primary" />
+            <div className="bg-white/5 p-2 rounded-xl">
+              <Users className="h-4 w-4 text-white/70" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{metrics.totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.totalUsersChange} from last month
-            </p>
+            <div className="text-3xl font-black text-white tracking-tighter">{metrics.totalUsers}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-500 font-bold border border-green-500/10">
+                {metrics.totalUsersChange}
+              </span>
+              <p className="text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
+                 Growth
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50 bg-card/50 backdrop-blur shadow-sm hover:bg-card/80 transition-colors">
+
+        <Card className="border-none bg-white/[0.02] backdrop-blur-xl hover-scale animate-premium cursor-default relative overflow-hidden group shadow-2xl">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Activity className="h-24 w-24 -mr-8 -mt-8" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Users (24h)
+            <CardTitle className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
+              Active Users
             </CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
+            <div className="bg-white/5 p-2 rounded-xl">
+              <Activity className="h-4 w-4 text-white/70" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{metrics.activeUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.activeUsersChange} since yesterday
-            </p>
+            <div className="text-3xl font-black text-white tracking-tighter">{metrics.activeUsers}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-bold border border-blue-500/10">
+                {metrics.activeUsersChange}
+              </span>
+              <p className="text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
+                 24h Activity
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50 bg-card/50 backdrop-blur shadow-sm hover:bg-card/80 transition-colors">
+
+        <Card className="border-none bg-white/[0.02] backdrop-blur-xl hover-scale animate-premium cursor-default relative overflow-hidden group shadow-2xl">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <CreditCard className="h-24 w-24 -mr-8 -mt-8" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
               Total Matches
             </CardTitle>
-            <CreditCard className="h-4 w-4 text-primary" />
+            <div className="bg-white/5 p-2 rounded-xl">
+              <CreditCard className="h-4 w-4 text-white/70" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{metrics.totalMatches}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.totalMatchesChange} new matches this week
-            </p>
+            <div className="text-3xl font-black text-white tracking-tighter">{metrics.totalMatches}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 font-bold border border-purple-500/10">
+                {metrics.totalMatchesChange}
+              </span>
+              <p className="text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
+                 Matching Eng.
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/50 bg-card/50 backdrop-blur shadow-sm hover:bg-card/80 transition-colors">
+
+        <Card className="border-none bg-white/[0.02] backdrop-blur-xl hover-scale animate-premium cursor-default relative overflow-hidden group shadow-2xl">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Activity className="h-24 w-24 -mr-8 -mt-8" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              New Users Today
+            <CardTitle className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
+              New Users
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
+            <div className="bg-white/5 p-2 rounded-xl">
+              <Activity className="h-4 w-4 text-white/70" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{metrics.newUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {metrics.newUsersChange} since last hour
-            </p>
+            <div className="text-3xl font-black text-white tracking-tighter">{metrics.newUsers}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 font-bold border border-orange-500/10">
+                {metrics.newUsersChange}
+              </span>
+              <p className="text-[10px] font-bold text-muted-foreground/30 tracking-widest uppercase">
+                 Recent Signups
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

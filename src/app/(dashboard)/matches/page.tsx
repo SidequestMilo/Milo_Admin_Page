@@ -25,6 +25,12 @@ export default function MatchesPage() {
   const [trends, setTrends] = useState<any[]>([]);
   const [scores, setScores] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({ generated: "0", connected: "0", skipped: "0", acceptance: "0%" });
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -42,13 +48,13 @@ export default function MatchesPage() {
         
         // Use real trends if available
         setTrends(actualHistory);
-        setScores(trendsData.scores || []);
+        setScores(actualHistory); // Use same history for scores
         
         setMetrics({
           generated: data.total_matches?.toString() || "0",
           connected: data.accepted?.toString() || "0",
           skipped: data.skipped?.toString() || "0",
-          acceptance: `${data.success_rate ? (data.success_rate * 100).toFixed(1) : 0}%`
+          acceptance: `${data.success_rate ? data.success_rate.toFixed(1) : 0}%`
         });
       } catch (err) {
         console.error("Failed to fetch analytics");
@@ -166,7 +172,8 @@ export default function MatchesPage() {
             <CardTitle>Match Success Over Time</CardTitle>
             <CardDescription>Generated matches vs Accepted connections</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px]">
+          <CardContent style={{ height: "350px", width: "100%", minHeight: "350px" }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
               <AreaChart data={trends} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
@@ -183,12 +190,16 @@ export default function MatchesPage() {
                 <XAxis dataKey="date" stroke="#A1A1AA" tickLine={false} axisLine={false} />
                 <YAxis stroke="#A1A1AA" tickLine={false} axisLine={false} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: "#1A1A1D", borderColor: "#2C2C2F", color: "#E4E4E7" }} 
+                   contentStyle={{ backgroundColor: "#1A1A1D", borderColor: "#2C2C2F", color: "#E4E4E7" }} 
                 />
+                <Area type="monotone" dataKey="generated" stroke="#71717A" fillOpacity={1} fill="rgba(113, 113, 122, 0.1)" name="Generated" />
                 <Area type="monotone" dataKey="success" stroke="#E4E4E7" fillOpacity={1} fill="url(#colorSuccess)" name="Accepted" />
                 <Area type="monotone" dataKey="skipped" stroke="#52525B" fillOpacity={1} fill="url(#colorSkipped)" name="Skipped" />
               </AreaChart>
             </ResponsiveContainer>
+            ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
+            )}
           </CardContent>
         </Card>
 
@@ -197,7 +208,8 @@ export default function MatchesPage() {
             <CardTitle>AI Compatibility Score Trend</CardTitle>
             <CardDescription>Average match score derived by the matching engine</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px]">
+          <CardContent style={{ height: "350px", width: "100%", minHeight: "350px" }}>
+            {isMounted ? (
             <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
               <LineChart data={scores} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C2C2F" />
@@ -209,6 +221,9 @@ export default function MatchesPage() {
                 <Line type="monotone" dataKey="score" stroke="#E4E4E7" strokeWidth={3} dot={{ fill: '#1A1A1D', stroke: '#E4E4E7', strokeWidth: 2, r: 4 }} name="Avg Score" />
               </LineChart>
             </ResponsiveContainer>
+            ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -238,7 +253,7 @@ export default function MatchesPage() {
                 </TableRow>
               ) : (
                 matches.map((match: any, index: number) => (
-                  <TableRow key={match.id || match.match_id || index} className="border-border/50 hover:bg-muted/30 transition-colors">
+                  <TableRow key={`match-${match.id || match.match_id || index}-${index}`} className="border-border/50 hover:bg-muted/30 transition-colors">
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {match.id || match.match_id || `m_${index}`}
                     </TableCell>

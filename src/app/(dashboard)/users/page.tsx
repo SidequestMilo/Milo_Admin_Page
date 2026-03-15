@@ -97,8 +97,8 @@ export default function UsersPage() {
         const data = Array.isArray(response) ? response : (response.users || response.data?.users || response.data || response.items || []);
         
         // Map the backend data to match our UI expectations
-        const formattedData = data.map((u: any) => ({
-          id: u.telegram_id || u.id || u._id || `tg_${Math.floor(Math.random() * 100000)}`,
+        const formattedData = data.map((u: any, index: number) => ({
+          id: u.telegram_id || u._id || `tg_unknown_${index}_${Date.now()}`,
           username: u.username || `@${u.first_name || 'user'}`.toLowerCase(),
           name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || "Unknown",
           type: u.occupation || u.user_type || u.type || "Standard",
@@ -178,8 +178,8 @@ export default function UsersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id} className="border-border/50 hover:bg-muted/30 transition-colors">
+              filteredUsers.map((user, index) => (
+                <TableRow key={`user-${user.id}-${index}`} className="border-border/50 hover:bg-muted/30 transition-colors">
                   <TableCell className="font-mono text-xs text-muted-foreground">{user.id}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">

@@ -1,9 +1,14 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 
 async def check_db():
-    uri = "mongodb+srv://Praguni:6sKiJdQgR8ijGuUb@cluster0.zhswkru.mongodb.net/milo_db?retryWrites=true&w=majority&appName=Cluster0"
+    # Connect to MongoDB
+    # New URI provided by user
+    uri = os.getenv("MONGODB_URI")
     client = AsyncIOMotorClient(uri)
     
     # Check milo_db

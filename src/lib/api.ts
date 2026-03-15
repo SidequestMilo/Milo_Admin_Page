@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Use environment variable if available, otherwise default to remote for development
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://3.110.182.233:8000";
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const api = axios.create({
     baseURL: baseURL,
