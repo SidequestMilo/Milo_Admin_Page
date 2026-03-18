@@ -4,7 +4,7 @@ import axios from "axios";
 // This avoids CORS issues and ensures the browser calls the Vercel domain instead of the backend IP directly.
 const baseURL = typeof window !== 'undefined' && process.env.NODE_ENV === 'production'
     ? ""
-    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000");
+    : (process.env.NEXT_PUBLIC_API_URL || "http://3.110.182.233:8000");
 
 const api = axios.create({
     baseURL: baseURL,
